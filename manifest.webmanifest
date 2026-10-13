@@ -1,0 +1,11 @@
+{
+  "name": "دفتر حساب بدهکاری و بستانکاری",
+  "short_name": "دفتر حساب",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#171c2b",
+  "theme_color": "#202638",
+  "description": "دفتر آفلاین مدیریت بدهکاری و بستانکاری اشخاص"
+}
