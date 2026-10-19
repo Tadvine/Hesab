@@ -94,7 +94,7 @@ function restore(file){if(!file)return;const r=new FileReader();r.onload=()=>{tr
 $('backToHomeBtn').onclick=()=>{selectedId=null;if(location.hash==='#account')history.back();render()};$('addPersonBtn').onclick=()=>openPerson();$('editPersonBtn').onclick=()=>openPerson(selectedId);$('deletePersonBtn').onclick=deletePerson;$('addEntryBtn').onclick=()=>openEntry();$('backupBtn').onclick=backup;$('restoreBtn').onclick=()=>$('restoreFile').click();$('restoreFile').onchange=e=>restore(e.target.files[0]);$('printEntriesBtn').onclick=()=>window.print();
 load();selectedId=null;render();
 window.addEventListener('popstate',()=>{if(selectedId){selectedId=null;render()}});
-if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',async()=>{try{const reg=await navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'});reg.update().catch(()=>{});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')reg.update().catch(()=>{})});}catch(_){}});
 })();
 </script>
 </body>
