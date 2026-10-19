@@ -21,14 +21,18 @@
 <div class="app">
   <header class="top">
     <div class="brand"><div class="logo">₮</div><div><h1>دفتر حساب</h1><p>مدیریت بدهکاری و بستانکاری اشخاص</p></div></div>
-    <div class="top-actions"><div class="backup-actions"><button class="ghost" id="backupBtn">پشتیبان‌گیری</button><button class="ghost" id="restoreBtn">بازیابی</button></div><input id="restoreFile" type="file" accept="application/json,.json" class="hidden"></div>
+    <div class="top-actions">
+      <button class="ghost" id="backupBtn">پشتیبان‌گیری</button>
+      <button class="ghost" id="restoreBtn">بازیابی</button>
+      <input id="restoreFile" type="file" accept="application/json,.json" class="hidden">
+    </div>
   </header>
   <section class="stats" id="peopleCountPanel" style="grid-template-columns:1fr">
     <div class="stat" style="display:flex;align-items:center;justify-content:space-between"><span class="label">تعداد اشخاص ثبت‌شده</span><strong id="peopleCount">۰</strong></div>
   </section>
   <div class="layout">
     <aside class="panel people-panel" id="peoplePanel">
-      <div class="panel-head"><h2>اشخاص</h2></div>
+      <div class="panel-head"><h2>اشخاص</h2><button class="primary" id="addPersonBtn">+ شخص جدید</button></div>
       <div id="personList" class="person-list"></div>
     </aside>
     <main class="panel hidden" id="accountPanel">
@@ -47,9 +51,6 @@
         <div class="table-wrap"><table><thead><tr><th>شرح و تاریخ</th><th>بدهکار (تومان)</th><th>بستانکار (تومان)</th><th>باقیمانده (تومان)</th><th>عملیات</th></tr></thead><tbody id="entriesBody"></tbody></table><div id="entriesEmpty" class="empty hidden">تراکنشی برای نمایش وجود ندارد.</div></div>
       </section>
     </main>
-  </div>
-  <div class="bottom-controls" id="bottomControls">
-    <button class="primary add-person-fab" id="addPersonBtn" aria-label="شخص جدید" title="شخص جدید">+</button>
   </div>
   <div class="bottom-note">اطلاعات به‌صورت محلی در همین مرورگر ذخیره می‌شود. برای انتقال به گوشی دیگر، مرتب پشتیبان بگیرید.</div>
 </div>
@@ -78,7 +79,7 @@ function personEntries(id){return state.entries.filter(e=>e.personId===id)}
 function totals(id){const es=personEntries(id);return {debt:es.reduce((a,e)=>a+(+e.debt||0),0),credit:es.reduce((a,e)=>a+(+e.credit||0),0)}}
 function balance(id){const t=totals(id);return t.debt-t.credit}
 function safe(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function render(){renderStats();renderPeople();const detailMode=!!selectedId&&state.people.some(p=>p.id===selectedId);document.querySelector('.layout').classList.toggle('home-mode',!detailMode);$('accountPanel').classList.toggle('hidden',!detailMode);$('peoplePanel').classList.toggle('hidden',detailMode);$('peopleCountPanel').classList.toggle('hidden',detailMode);$('backupBtn').classList.toggle('hidden',detailMode);$('restoreBtn').classList.toggle('hidden',detailMode);$('bottomControls').classList.toggle('hidden',detailMode);renderDetails()}
+function render(){renderStats();renderPeople();const detailMode=!!selectedId&&state.people.some(p=>p.id===selectedId);document.querySelector('.layout').classList.toggle('home-mode',!detailMode);$('accountPanel').classList.toggle('hidden',!detailMode);$('peoplePanel').classList.toggle('hidden',detailMode);$('peopleCountPanel').classList.toggle('hidden',detailMode);$('backupBtn').classList.toggle('hidden',detailMode);$('restoreBtn').classList.toggle('hidden',detailMode);renderDetails()}
 function renderStats(){ $('peopleCount').textContent=fmt(state.people.length)}
 function renderPeople(){const ps=state.people;$('personList').innerHTML=ps.length?ps.map(p=>{const b=balance(p.id);const label=b===0?'تسویه':(b>0?'بدهکار: ':'بستانکار: ')+money(Math.abs(b));const cls=b>0?'debt':b<0?'credit':'settled';return `<button class="person" data-person="${safe(p.id)}"><span class="person-name">${safe(p.name)}</span><span class="person-bal ${cls}">${label}</span></button>`}).join(''):'<div class="empty">هنوز شخصی ثبت نشده است. از «شخص جدید» شروع کنید.</div>';document.querySelectorAll('[data-person]').forEach(b=>b.onclick=()=>{selectedId=b.dataset.person;history.pushState({accountView:true},'','#account');render()})}
 function renderDetails(){const p=state.people.find(p=>p.id===selectedId);$('noPerson').classList.toggle('hidden',!!p);$('personDetails').classList.toggle('hidden',!p);if(!p)return;$('selectedName').textContent=p.name;$('selectedPhone').textContent=p.phone||'شماره تماسی ثبت نشده';const t=totals(p.id),b=t.debt-t.credit;$('personCredit').textContent=money(t.credit);$('personDebt').textContent=money(t.debt);$('personBalance').textContent=b===0?'تسویه شده':(b>0?'بدهکار: ':'بستانکار: ')+money(b);$('personBalance').className=b>0?'debt':b<0?'credit':'';const chronological=personEntries(p.id).sort((a,b)=>a.date.localeCompare(b.date)||a.createdAt-b.createdAt);let running=0;const runningBalances={};chronological.forEach(e=>{running+=(+e.debt||0)-(+e.credit||0);runningBalances[e.id]=running});const es=[...chronological].reverse();$('entriesBody').innerHTML=es.map(e=>{const rb=runningBalances[e.id]||0;const rbLabel=rb===0?'تسویه':(rb>0?'بدهکار: ':'بستانکار: ')+fmt(rb);const rbClass=rb>0?'debt':rb<0?'credit':'';return `<tr><td>${safe(e.description||'بدون شرح')}<small>${safe(isoToJalali(e.date||''))}</small></td><td class="amount debt">${e.debt?fmt(e.debt):'—'}</td><td class="amount credit">${e.credit?fmt(e.credit):'—'}</td><td class="amount ${rbClass}">${rbLabel}</td><td><div class="row-actions"><button data-edit="${e.id}">ویرایش</button><button class="danger" data-delete="${e.id}">حذف</button></div></td></tr>`}).join('');$('entriesEmpty').classList.toggle('hidden',es.length>0);document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEntry(b.dataset.edit));document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deleteEntry(b.dataset.delete))}
